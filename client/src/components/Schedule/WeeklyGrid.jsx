@@ -1,16 +1,16 @@
- 
 import React, { useState } from 'react';
 import { useSchedule } from '../../hooks/useSchedule';
 
 const WeeklyGrid = () => {
-  const { schedule, addActivity, activities, createActivity } = useSchedule();
+  const { schedule, addActivity, activities, createActivity, removeActivity } = useSchedule();
   const [newActivityName, setNewActivityName] = useState('');
   const [selectedColor, setSelectedColor] = useState('#3B82F6');
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Days and hours for the grid
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const hours = ['9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'];
 
-  // Event Handling: Form submission
+  // Handle creating new activities
   const handleCreateActivity = (e) => {
     e.preventDefault();
     if (newActivityName.trim()) {
@@ -19,108 +19,207 @@ const WeeklyGrid = () => {
     }
   };
 
-  // Event Handling: Drag and drop
-  const handleDragStart = (e, activity) => {
-    e.dataTransfer.setData('activity', JSON.stringify(activity));
+  // Handle dragging from activity library
+  const handleLibraryDragStart = (e, activity) => {
+    e.dataTransfer.setData('activityData', JSON.stringify(activity));
+    e.dataTransfer.setData('source', 'library');
+    console.log('Started dragging from library:', activity.name);
   };
 
-  const handleDrop = (e, day, hour) => {
+  // Handle dragging from schedule slots
+  const handleScheduleDragStart = (e, day, hour) => {
+    const slotKey = `${day}-${hour}`;
+    const activity = schedule[slotKey];
+    
+    if (activity) {
+      e.dataTransfer.setData('activityData', JSON.stringify(activity));
+      e.dataTransfer.setData('source', 'schedule');
+      e.dataTransfer.setData('sourceSlot', slotKey);
+      console.log('Started dragging from schedule:', activity.name, 'at', slotKey);
+    }
+  };
+
+  // Handle dropping on schedule slots
+  const handleScheduleDrop = (e, day, hour) => {
     e.preventDefault();
-    const activity = JSON.parse(e.dataTransfer.getData('activity'));
-    addActivity(day, hour, activity);
+    
+    const activityData = e.dataTransfer.getData('activityData');
+    const source = e.dataTransfer.getData('source');
+    const sourceSlot = e.dataTransfer.getData('sourceSlot');
+    const targetSlot = `${day}-${hour}`;
+    
+    console.log('Drop on schedule:', { source, sourceSlot, targetSlot });
+    
+    if (activityData) {
+      const activity = JSON.parse(activityData);
+      
+      // If moving from another schedule slot, remove from old location first
+      if (source === 'schedule' && sourceSlot && sourceSlot !== targetSlot) {
+        const [sourceDay, sourceHour] = sourceSlot.split('-');
+        removeActivity(sourceDay, sourceHour);
+      }
+      
+      // Add to new location
+      addActivity(day, hour, activity);
+    }
   };
 
+  // Handle dropping on removal zone
+  const handleRemovalDrop = (e) => {
+    e.preventDefault();
+    
+    const source = e.dataTransfer.getData('source');
+    const sourceSlot = e.dataTransfer.getData('sourceSlot');
+    
+    console.log('Drop on removal zone:', { source, sourceSlot });
+    
+    if (source === 'schedule' && sourceSlot) {
+      const [sourceDay, sourceHour] = sourceSlot.split('-');
+      removeActivity(sourceDay, sourceHour);
+      console.log('Removed activity from:', sourceSlot);
+    }
+  };
+
+  // Allow drop events
   const handleDragOver = (e) => {
     e.preventDefault();
   };
-  //Graphical Representation
+
   return (
-    <div className="p-4 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-center mb-6">Weekly Schedule Planner</h1>
-      
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <h2 className="text-xl font-semibold mb-4">Create Activity</h2>
-        <form onSubmit={handleCreateActivity} className="flex gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Activity Name</label>
-            <input
-              type="text"
-              value={newActivityName}
-              onChange={(e) => setNewActivityName(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 w-48"
-              placeholder="Enter activity name"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-            <input
-              type="color"
-              value={selectedColor}
-              onChange={(e) => setSelectedColor(e.target.value)}
-              className="w-12 h-10 border border-gray-300 rounded"
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Create Activity
-          </button>
-        </form>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Title */}
+        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
+          Weekly Schedule Planner
+        </h1>
         
-        {/* Activity Library */}
-        <div className="mt-4">
-          <h3 className="text-lg font-medium mb-2">Available Activities</h3>
-          <div className="flex gap-2 flex-wrap">
-            {activities.map((activity) => (
-              <div
-                key={activity.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, activity)}
-                className="px-3 py-2 rounded cursor-move shadow-sm border"
-                style={{ backgroundColor: activity.color, color: 'white' }}
-              >
-                {activity.name}
+        {/* Activity Creator Section */}
+        <div className="bg-white p-6 rounded-xl shadow-lg mb-8 border border-gray-100">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Create New Activity</h2>
+          
+          {/* Create Activity Form */}
+          <form onSubmit={handleCreateActivity} className="flex flex-wrap gap-4 items-end mb-6">
+            <div className="flex-1 min-w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Activity Name</label>
+              <input
+                type="text"
+                value={newActivityName}
+                onChange={(e) => setNewActivityName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="e.g., Team Meeting, Workout, Study Time"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+              <input
+                type="color"
+                value={selectedColor}
+                onChange={(e) => setSelectedColor(e.target.value)}
+                className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md hover:shadow-lg"
+            >
+              ✚ Create Activity
+            </button>
+          </form>
+          
+          {/* Activity Library */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">
+              Activity Library (Drag to Schedule)
+            </h3>
+            <div className="flex gap-3 flex-wrap mb-4">
+              {activities.map((activity) => (
+                <div
+                  key={activity.id}
+                  draggable
+                  onDragStart={(e) => handleLibraryDragStart(e, activity)}
+                  className="px-4 py-2 rounded-lg cursor-move shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium text-sm text-white"
+                  style={{ backgroundColor: activity.color }}
+                >
+                  {activity.name}
+                </div>
+              ))}
+            </div>
+            
+            {/* Removal Zone */}
+            <div 
+              className="p-4 border-2 border-dashed border-red-300 rounded-lg bg-red-50 text-center text-red-600 hover:bg-red-100 transition-colors"
+              onDrop={handleRemovalDrop}
+              onDragOver={handleDragOver}
+            >
+               <strong>Drag activities here to remove them from schedule</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Weekly Schedule Grid */}
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
+          {/* Header Row */}
+          <div className="grid grid-cols-8 bg-gradient-to-r from-gray-800 to-gray-700 text-white">
+            <div className="p-4 font-bold text-center border-r border-gray-600">Time</div>
+            {days.map((day) => (
+              <div key={day} className="p-4 font-bold text-center border-r border-gray-600 last:border-r-0">
+                {day}
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="grid grid-cols-8 bg-gray-50">
-          <div className="p-3 font-semibold text-gray-600">Time</div>
-          {days.map((day) => (
-            <div key={day} className="p-3 font-semibold text-center text-gray-700 border-l">
-              {day}
+          
+          {/* Schedule Grid Rows */}
+          {hours.map((hour, hourIndex) => (
+            <div key={hour} className={`grid grid-cols-8 border-b border-gray-200 ${hourIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+              {/* Time Column */}
+              <div className="p-4 text-sm font-semibold text-gray-700 bg-gray-100 border-r border-gray-200 flex items-center">
+                {hour}
+              </div>
+              
+              {/* Day Columns */}
+              {days.map((day) => {
+                const slotKey = `${day}-${hour}`;
+                const activity = schedule[slotKey];
+                
+                return (
+                  <div
+                    key={slotKey}
+                    onDrop={(e) => handleScheduleDrop(e, day, hour)}
+                    onDragOver={handleDragOver}
+                    className="p-2 h-20 border-r border-gray-200 last:border-r-0 hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center group"
+                  >
+                    {activity ? (
+                      <div
+                        draggable
+                        onDragStart={(e) => handleScheduleDragStart(e, day, hour)}
+                        className="w-full h-full rounded-lg px-3 py-2 text-xs text-white flex items-center justify-center font-medium shadow-sm border-2 border-white cursor-move hover:shadow-md transition-shadow"
+                        style={{ backgroundColor: activity.color }}
+                        title={`${activity.name} - Drag to move or remove`}
+                      >
+                        {activity.name}
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 group-hover:text-gray-400 transition-colors">
+                        <span className="text-2xl opacity-0 group-hover:opacity-100 transition-opacity">+</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
-        
-        {hours.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 border-t">
-            <div className="p-3 text-sm text-gray-600 bg-gray-50 border-r">
-              {hour}
-            </div>
-            {days.map((day) => (
-              <div
-                key={`${day}-${hour}`}
-                onDrop={(e) => handleDrop(e, day, hour)}
-                onDragOver={handleDragOver}
-                className="p-2 h-16 border-l hover:bg-blue-50 flex items-center justify-center"
-              >
-                {schedule[`${day}-${hour}`] && (
-                  <div
-                    className="w-full h-full rounded px-2 py-1 text-xs text-white flex items-center justify-center"
-                    style={{ backgroundColor: schedule[`${day}-${hour}`].color }}
-                  >
-                    {schedule[`${day}-${hour}`].name}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
+
+        {/* Instructions */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 bg-white px-6 py-3 rounded-lg shadow-sm inline-block">
+            <strong>How to use:</strong> Drag activities from the library to schedule them. 
+            <br />
+            <strong>To move:</strong> Drag activities between time slots. 
+            <strong>To remove:</strong> Drag to the red removal zone.
+          </p>
+        </div>
       </div>
     </div>
   );

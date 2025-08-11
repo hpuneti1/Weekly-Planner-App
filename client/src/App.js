@@ -7,6 +7,9 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto py-8">
         <WeeklyGrid />
+        <div className="mt-8">
+          <TimeChart />
+        </div>
       </div>
     </div>
   );
