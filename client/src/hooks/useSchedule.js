@@ -8,7 +8,7 @@ export const useSchedule = () => {
   const [activities, setActivities] = useState([
     { id: 1, name: 'Meeting', color: '#3B82F6' },
     { id: 2, name: 'Work', color: '#10B981' },
-    { id: 3, name: 'Gym', color: '#F59E0B' },
+    { id: 3, name: 'Exercise', color: '#F59E0B' },
     { id: 4, name: 'Study', color: '#8B5CF6' }
   ]);
   
@@ -40,12 +40,41 @@ export const useSchedule = () => {
   // Save schedule to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('weeklySchedule', JSON.stringify(schedule));
+    
+    // SIMPLE DATABASE SAVE - Just try to save, don't worry if it fails
+    saveToDatabase();
   }, [schedule]);
 
   // Save activities to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('activities', JSON.stringify(activities));
   }, [activities]);
+
+  // Simple function to try saving to database
+  const saveToDatabase = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/schedules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'My Weekly Schedule',
+          scheduleData: schedule,
+          activities: activities,
+          timestamp: new Date()
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Schedule saved to database');
+      } else {
+        console.log('⚠️ Database save failed, using localStorage');
+      }
+    } catch (error) {
+      console.log('⚠️ Database not available, using localStorage');
+    }
+  };
 
   // Add an activity to a specific time slot
   const addActivity = (day, hour, activity) => {
