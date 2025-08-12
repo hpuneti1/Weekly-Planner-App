@@ -128,7 +128,3 @@ This project was developed as part of a full-stack web development course, demon
 
 ## Contact Information
 ### Haradeep Puneti  - haradeep@vt.edu 
-
-## License
-
-This project is developed for educational purposes as part of a web development course portfolio.
