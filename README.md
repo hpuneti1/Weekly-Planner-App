@@ -118,13 +118,7 @@ The application will be available at `http://localhost:3000`
 
 ## Technical Architecture
 
-The application follows a modern full-stack architecture with clear separation between frontend and backend components. The React frontend manages state through custom hooks, while the Express backend provides RESTful API endpoints for data operations. MongoDB serves as the primary data store with automatic fallback to browser local storage.
-
-Key design patterns include component composition, custom hooks for state management, and service-layer abstraction for API communications.
-
-## Contributing
-
-This project was developed as part of a full-stack web development course, demonstrating proficiency in modern JavaScript frameworks, database integration, and responsive design principles.
+The app follows a modern full-stack architecture with clear separation between frontend and backend components. The React frontend manages state through custom hooks, while the Express backend provides RESTful API endpoints for data operations. MongoDB serves as the primary data store with automatic fallback to browser local storage.
 
 ## Contact Information
 ### Haradeep Puneti  - haradeep@vt.edu 
