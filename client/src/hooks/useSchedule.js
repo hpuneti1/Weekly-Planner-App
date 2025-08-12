@@ -53,7 +53,6 @@ export const useSchedule = () => {
     
     localStorage.setItem('weeklySchedule', JSON.stringify(schedule));
     
-    // SIMPLE DATABASE SAVE - Just try to save, don't worry if it fails
     const saveToDatabase = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/schedules', {

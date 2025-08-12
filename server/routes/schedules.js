@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Schedule = require('../models/Schedule');
 
-// Simple POST route
+//POST route
 router.post('/', async (req, res) => {
   try {
     console.log('Received schedule data:', req.body);
@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Simple GET route
+//GET route
 router.get('/', async (req, res) => {
   try {
     const schedules = await Schedule.find().limit(10).sort({ createdAt: -1 });
