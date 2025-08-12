@@ -17,12 +17,19 @@ export const useSchedule = () => {
 
   // Load data from localStorage when component mounts
   useEffect(() => {
+    console.log('=== useSchedule: Loading data from localStorage ===');
+    
     const savedSchedule = localStorage.getItem('weeklySchedule');
     const savedActivities = localStorage.getItem('activities');
     
+    console.log('Raw localStorage data:', savedSchedule);
+    
     if (savedSchedule) {
       try {
-        setSchedule(JSON.parse(savedSchedule));
+        const parsedSchedule = JSON.parse(savedSchedule);
+        console.log('Parsed schedule:', parsedSchedule);
+        setSchedule(parsedSchedule);
+        console.log('Schedule state set to:', parsedSchedule);
       } catch (e) {
         console.error('Error loading schedule:', e);
       }
@@ -30,7 +37,9 @@ export const useSchedule = () => {
     
     if (savedActivities) {
       try {
-        setActivities(JSON.parse(savedActivities));
+        const parsedActivities = JSON.parse(savedActivities);
+        console.log('Parsed activities:', parsedActivities);
+        setActivities(parsedActivities);
       } catch (e) {
         console.error('Error loading activities:', e);
       }
@@ -39,42 +48,44 @@ export const useSchedule = () => {
 
   // Save schedule to localStorage whenever it changes
   useEffect(() => {
+    console.log('=== useSchedule: Saving schedule ===');
+    console.log('Current schedule to save:', schedule);
+    
     localStorage.setItem('weeklySchedule', JSON.stringify(schedule));
     
     // SIMPLE DATABASE SAVE - Just try to save, don't worry if it fails
+    const saveToDatabase = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/schedules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: 'My Weekly Schedule',
+            scheduleData: schedule,
+            activities: activities,
+            timestamp: new Date()
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Schedule saved to database');
+        } else {
+          console.log('⚠️ Database save failed, using localStorage');
+        }
+      } catch (error) {
+        console.log('⚠️ Database not available, using localStorage');
+      }
+    };
+
     saveToDatabase();
-  }, [schedule]);
+  }, [schedule, activities]);
 
   // Save activities to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('activities', JSON.stringify(activities));
   }, [activities]);
-
-  // Simple function to try saving to database
-  const saveToDatabase = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/schedules', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: 'My Weekly Schedule',
-          scheduleData: schedule,
-          activities: activities,
-          timestamp: new Date()
-        })
-      });
-      
-      if (response.ok) {
-        console.log('✅ Schedule saved to database');
-      } else {
-        console.log('⚠️ Database save failed, using localStorage');
-      }
-    } catch (error) {
-      console.log('⚠️ Database not available, using localStorage');
-    }
-  };
 
   // Add an activity to a specific time slot
   const addActivity = (day, hour, activity) => {
